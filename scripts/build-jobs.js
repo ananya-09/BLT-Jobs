@@ -63,7 +63,9 @@ function buildJobs() {
     const files = fs
       .readdirSync(JOBS_DIR)
       .filter((f) => f.endsWith(".md") && f !== "README.md");
-    const jobs = files.map((f) => mdToJob(path.join(JOBS_DIR, f)));
+    const jobs = files
+      .map((f) => mdToJob(path.join(JOBS_DIR, f)))
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     const out = {
       jobs,
       count: jobs.length,

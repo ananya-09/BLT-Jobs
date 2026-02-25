@@ -50,8 +50,17 @@ function renderJob(job) {
   const jobType = job.job_type || "";
   const salary = job.salary_range || "";
   const createdAtRaw = job.created_at || "";
-  const createdAt = createdAtRaw
-    ? new Date(createdAtRaw).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+  const createdAtDate = createdAtRaw ? new Date(createdAtRaw) : null;
+  const createdAt = createdAtDate && !isNaN(createdAtDate)
+    ? createdAtDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+    : "";
+  const createdAtDaysAgo = createdAtDate && !isNaN(createdAtDate)
+    ? (() => {
+        const days = Math.floor((Date.now() - createdAtDate.getTime()) / 86400000);
+        if (days === 0) return "today";
+        if (days === 1) return "1 day ago";
+        return days + " days ago";
+      })()
     : "";
   const canApply = Boolean(job.application_email || job.application_url);
   const hasEmail = Boolean(job.application_email);
@@ -138,7 +147,7 @@ function renderJob(job) {
                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                        </svg>
-                       <span>Posted ${createdAt}</span>
+                       <span>Posted ${createdAt}${createdAtDaysAgo ? ` &middot; ${createdAtDaysAgo}` : ""}</span>
                      </div>`
                   : ""
               }
