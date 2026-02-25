@@ -4,6 +4,14 @@ title: '[JOB-LINK] '
 labels: ['job-posting-from-link']
 body:
   - type: input
+    id: job_title
+    attributes:
+      label: Job Title
+      description: Optional — override the title we scrape from the URL
+      placeholder: e.g. Senior Software Engineer
+    validations:
+      required: false
+  - type: input
     id: job_url
     attributes:
       label: Job URL

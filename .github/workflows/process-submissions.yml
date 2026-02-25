@@ -29,7 +29,7 @@ jobs:
         with:
           ref: main
 
-      - name: Get job URL from issue body
+      - name: Get job URL and title from issue body
         id: url
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -46,6 +46,12 @@ jobs:
             if (!url.startsWith('http')) url = 'https://' + url.replace(/^\/+/, '');
             require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'url=' + url + '\n');
             console.log('Found URL: ' + url);
+            const titleMatch = body.match(/###\s*Job Title\s*\n+([^\n#]+)/);
+            const title = titleMatch ? titleMatch[1].trim() : '';
+            if (title) {
+              require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'title=' + title + '\n');
+              console.log('Found title: ' + title);
+            }
           "
 
       - name: Setup Python
@@ -58,8 +64,14 @@ jobs:
 
       - name: Scrape URL and create job file
         id: scrape
+        env:
+          JOB_TITLE: ${{ steps.url.outputs.title }}
         run: |
-          OUTPUT=$(python3 scripts/scrape-job-url.py "${{ steps.url.outputs.url }}")
+          if [ -n "$JOB_TITLE" ]; then
+            OUTPUT=$(python3 scripts/scrape-job-url.py "${{ steps.url.outputs.url }}" --title "$JOB_TITLE")
+          else
+            OUTPUT=$(python3 scripts/scrape-job-url.py "${{ steps.url.outputs.url }}")
+          fi
           OUTPUT=$(echo "$OUTPUT" | tail -1)
           if [ -z "$OUTPUT" ] || [ ! -f "$OUTPUT" ]; then
             echo "Scraper did not produce a job file"

@@ -398,14 +398,24 @@ def scrape_url(url: str) -> tuple[dict, str]:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: scrape-job-url.py <job_url>", file=sys.stderr)
+        print("Usage: scrape-job-url.py <job_url> [--title <title>]", file=sys.stderr)
         sys.exit(1)
 
     url = sys.argv[1].strip()
     if not url.startswith("http://") and not url.startswith("https://"):
         url = "https://" + url
 
+    # Optional --title argument overrides the scraped title
+    title_override = None
+    args = sys.argv[2:]
+    for i, arg in enumerate(args):
+        if arg == "--title" and i + 1 < len(args):
+            title_override = args[i + 1].strip()
+            break
+
     fm, body = scrape_url(url)
+    if title_override:
+        fm["title"] = title_override
 
     company_slug = slugify(fm["organization_name"])
     title_slug = slugify(fm["title"])[:50]
