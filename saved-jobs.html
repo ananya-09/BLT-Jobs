@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Job Listings - BLT Jobs</title>
+    <title>Saved Jobs - BLT Jobs</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -38,12 +38,8 @@
           </a>
           <div class="hidden sm:flex items-center gap-1">
             <a href="./index.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Home</a>
-            <a href="./jobs.html" class="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">Browse Jobs</a>
-              <a href="./saved-jobs.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800 flex items-center gap-1">
-                <i class="fa-regular fa-bookmark text-xs" aria-hidden="true"></i>
-                Saved
-                <span id="saved-count-badge" class="hidden ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full"></span>
-              </a>
+            <a href="./jobs.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Browse Jobs</a>
+            <a href="./saved-jobs.html" class="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">Saved Jobs</a>
             <a href="./seekers.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Find Talent</a>
             <a href="./leaderboard.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Leaderboard</a>
             <a href="https://github.com/OWASP-BLT/BLT-Jobs" target="_blank" rel="noreferrer noopener" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
@@ -64,11 +60,8 @@
         <div id="mobile-menu" class="hidden border-t border-slate-200 py-3 sm:hidden dark:border-gray-700">
           <div class="flex flex-col gap-1">
             <a href="./index.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Home</a>
-            <a href="./jobs.html" class="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">Browse Jobs</a>
-            <a href="./saved-jobs.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800 flex items-center gap-1">
-              <i class="fa-regular fa-bookmark text-xs" aria-hidden="true"></i>
-              Saved Jobs
-            </a>
+            <a href="./jobs.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Browse Jobs</a>
+            <a href="./saved-jobs.html" class="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50">Saved Jobs</a>
             <a href="./seekers.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Find Talent</a>
             <a href="./leaderboard.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-800">Leaderboard</a>
             <a href="https://github.com/OWASP-BLT/BLT-Jobs" target="_blank" rel="noreferrer noopener" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700">
@@ -82,79 +75,39 @@
 
     <main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <header class="mb-8">
-        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl dark:text-gray-100">Job Listings</h1>
-        <p class="mt-2 text-slate-600 dark:text-gray-400">Browse open positions in the OWASP BLT community</p>
+        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl dark:text-gray-100 flex items-center gap-3">
+          <i class="fa-solid fa-bookmark text-red-600 dark:text-red-400" aria-hidden="true"></i>
+          Saved Jobs
+        </h1>
+        <p class="mt-2 text-slate-600 dark:text-gray-400">Jobs you've bookmarked for later</p>
       </header>
 
-      <div class="mb-6 space-y-4">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Filter Jobs</h2>
-          <a href="./add.html" class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700">
-            <i class="fa-solid fa-plus" aria-hidden="true"></i>
-            Post a Job
-          </a>
+      <div class="mb-6 flex items-center justify-between">
+        <div id="savedCount" class="text-sm text-gray-600 dark:text-gray-400">
+          <span id="countNumber">0</span> saved jobs
         </div>
-
-        <form id="filtersForm" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="relative">
-            <label for="searchInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
-            <i class="fa-solid fa-search absolute left-3 top-9 text-slate-400 dark:text-gray-500" aria-hidden="true"></i>
-            <input
-              type="text"
-              id="searchInput"
-              placeholder="Title, company, description..."
-              class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm shadow-sm transition focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-            />
-          </div>
-
-          <div>
-            <label for="typeFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Job Type</label>
-            <select
-              id="typeFilter"
-              class="w-full rounded-lg border border-slate-200 bg-white py-2 px-4 text-sm shadow-sm transition focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            >
-              <option value="">All Types</option>
-              <option value="full-time">Full-time</option>
-              <option value="part-time">Part-time</option>
-              <option value="contract">Contract</option>
-              <option value="internship">Internship</option>
-              <option value="freelance">Freelance</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="locationFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-            <input
-              type="text"
-              id="locationFilter"
-              placeholder="City, state, or remote"
-              class="w-full rounded-lg border border-slate-200 bg-white py-2 px-4 text-sm shadow-sm transition focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
-            />
-          </div>
-
-          <div class="flex items-end gap-2">
-            <button
-              type="button"
-              id="clearFiltersButton"
-              class="hidden flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-            >
-              Clear Filters
-            </button>
-          </div>
-        </form>
-
-        <div id="resultsSummary" class="hidden text-sm text-gray-600 dark:text-gray-400">
-          <span id="resultsCount">0</span><span id="resultsLabel"> jobs found</span>
-        </div>
-
-        <div id="emptyState" class="hidden rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <i class="fa-solid fa-briefcase text-4xl text-slate-300 dark:text-gray-600" aria-hidden="true"></i>
-          <h3 class="mt-4 text-lg font-semibold dark:text-gray-100">No jobs found</h3>
-          <p id="emptyStateMessage" class="mt-2 text-slate-600 dark:text-gray-400">Try adjusting your search terms or filters</p>
-        </div>
+        <button
+          id="clearAllButton"
+          class="hidden rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+        >
+          <i class="fa-solid fa-trash mr-2" aria-hidden="true"></i>
+          Clear All
+        </button>
       </div>
 
-      <div id="jobList" class="space-y-4"></div>
+      <div id="savedJobsList" class="space-y-4"></div>
+
+      <div id="emptyState" class="hidden rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <i class="fa-regular fa-bookmark text-6xl text-slate-300 dark:text-gray-600 mb-4" aria-hidden="true"></i>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No saved jobs yet</h3>
+        <p class="text-slate-600 dark:text-gray-400 mb-6">
+          Start bookmarking jobs you're interested in to keep track of them here
+        </p>
+        <a href="./jobs.html" class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-red-700">
+          <i class="fa-solid fa-search" aria-hidden="true"></i>
+          Browse Jobs
+        </a>
+      </div>
     </main>
 
     <footer class="mt-16 border-t border-slate-200 bg-white py-8 dark:border-gray-700 dark:bg-gray-900">
@@ -174,6 +127,6 @@
 
     <script src="assets/js/theme.js"></script>
     <script src="assets/js/saved-jobs.js"></script>
-    <script src="assets/js/app.js"></script>
+    <script src="assets/js/saved-jobs-page.js"></script>
   </body>
 </html>
