@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""
+List all jobs with their review status.
+Useful for getting an overview of the job board.
+"""
+
+import json
+import sys
+from pathlib import Path
+
+JOBS_JSON = Path(__file__).resolve().parent.parent / "data" / "jobs.json"
+
+
+def main():
+    if not JOBS_JSON.exists():
+        print("❌ Error: jobs.json not found. Run build_jobs.py first.", file=sys.stderr)
+        sys.exit(1)
+
+    data = json.loads(JOBS_JSON.read_text(encoding="utf-8"))
+
+    print(f"\n📋 Job Board Status ({data['count']} total jobs)\n")
+    print("=" * 80)
+
+    for index, job in enumerate(data["jobs"]):
+        status = "⚠️  NEEDS REVIEW" if job.get("needs_manual_review") else "✅ Validated"
+        print(f"\n{index + 1}. {status}")
+        print(f"   ID: {job['id']}")
+        print(f"   Title: {job['title']}")
+        print(f"   Organization: {job['organization_name']}")
+        print(f"   Location: {job.get('location') or 'Not specified'}")
+        print(f"   Type: {job['job_type']}")
+        print(f"   URL: {job.get('application_url') or 'Not specified'}")
+
+    print("\n" + "=" * 80)
+
+    needs_review = sum(1 for j in data["jobs"] if j.get("needs_manual_review"))
+    validated = data["count"] - needs_review
+
+    print(f"\nSummary: {validated} validated, {needs_review} need review\n")
+
+
+if __name__ == "__main__":
+    main()

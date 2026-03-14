@@ -29,41 +29,37 @@ jobs:
         with:
           ref: main
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements-scrape.txt
+
       - name: Get job URL from issue body or title
         id: url
         env:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          node -e "
-            const title = process.env.ISSUE_TITLE || '';
-            const body = process.env.ISSUE_BODY || '';
-
-            // Try to extract URL from body field '### Job Posting URL'
-            const bodyMatch = body.match(/### Job Posting URL\s*\n+([^\n]+)/);
-            let url = (bodyMatch && bodyMatch[1].trim()) || '';
-
-            // Fall back to title if body field is empty or not a URL
-            if (!url || !url.startsWith('http')) {
-              url = title.trim();
-            }
-
-            if (!url) {
-              console.error('No Job URL found in issue body or title');
-              process.exit(1);
-            }
-            if (!url.startsWith('http')) url = 'https://' + url.replace(/^\/+/, '');
-            require('fs').appendFileSync(process.env.GITHUB_OUTPUT, 'url=' + url + '\n');
-            console.log('Found URL: ' + url);
-          "
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install scrape dependencies
-        run: pip install -r scripts/requirements-scrape.txt
+          python3 -c "
+import os, re, sys
+title = os.environ.get('ISSUE_TITLE', '')
+body = os.environ.get('ISSUE_BODY', '')
+m = re.search(r'### Job Posting URL\s*\n+([^\n]+)', body)
+url = (m.group(1).strip() if m else '') or ''
+if not url or not url.startswith('http'):
+    url = title.strip()
+if not url:
+    print('No Job URL found in issue body or title', file=sys.stderr)
+    sys.exit(1)
+if not url.startswith('http'):
+    url = 'https://' + url.lstrip('/')
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    f.write('url=' + url + '\n')
+print('Found URL: ' + url)
+"
 
       - name: Scrape URL and create job file
         id: scrape
@@ -79,22 +75,13 @@ jobs:
           echo "path=$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "Created $OUTPUT"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Check for duplicate job
         id: duplicate_check
         run: |
-          RESULT=$(node scripts/check-duplicate.js "${{ steps.scrape.outputs.path }}" || echo '{"isDuplicate":true}')
+          RESULT=$(python3 scripts/check_duplicate.py "${{ steps.scrape.outputs.path }}" || echo '{"isDuplicate":true}')
           echo "result=$RESULT" >> "$GITHUB_OUTPUT"
-          IS_DUP=$(echo "$RESULT" | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).isDuplicate)")
-          if [ "$IS_DUP" = "true" ]; then
+          IS_DUP=$(python3 -c "import json,sys; print(json.loads('$RESULT').get('isDuplicate', False))")
+          if [ "$IS_DUP" = "True" ]; then
             echo "Duplicate job detected"
             exit 1
           fi
@@ -104,10 +91,10 @@ jobs:
         if: steps.duplicate_check.outcome == 'failure'
         run: |
           RESULT='${{ steps.duplicate_check.outputs.result }}'
-          TITLE=$(echo "$RESULT" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.title || 'Unknown')")
-          ORG=$(echo "$RESULT" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.organization || 'Unknown')")
-          EXISTING=$(echo "$RESULT" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.existingFile || 'unknown')")
-          
+          TITLE=$(python3 -c "import json,sys; d=json.loads('$RESULT'); print(d.get('title') or 'Unknown')")
+          ORG=$(python3 -c "import json,sys; d=json.loads('$RESULT'); print(d.get('organization') or 'Unknown')")
+          EXISTING=$(python3 -c "import json,sys; d=json.loads('$RESULT'); print(d.get('existingFile') or 'unknown')")
+
           gh issue comment ${{ github.event.issue.number }} --body "This job posting appears to be a duplicate of an existing listing.
 
           **Duplicate detected:**
@@ -123,13 +110,13 @@ jobs:
 
       - name: Build jobs and seekers JSON
         if: steps.duplicate_check.outcome == 'success'
-        run: npm run build:jobs
+        run: python3 scripts/build_jobs.py
 
       - name: Check if job needs manual review
         id: validate
         run: |
           JOB_FILE=$(basename "${{ steps.scrape.outputs.path }}" .md)
-          if npm run validate:jobs 2>&1 | grep -q "$JOB_FILE"; then
+          if python3 scripts/validate_jobs.py 2>&1 | grep -q "$JOB_FILE"; then
             echo "needs_review=true" >> "$GITHUB_OUTPUT"
           else
             echo "needs_review=false" >> "$GITHUB_OUTPUT"
@@ -167,18 +154,26 @@ jobs:
         with:
           ref: main
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements-scrape.txt
+
       - name: Write issue body to file
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          node -e "require('fs').writeFileSync('issue_body.txt', process.env.ISSUE_BODY || '')"
+          python3 -c "import os; open('issue_body.txt', 'w').write(os.environ.get('ISSUE_BODY', ''))"
 
       - name: Create job file from form
         id: create
         env:
           ISSUE_USER: ${{ github.event.issue.user.login }}
         run: |
-          PATH_OUT=$(node scripts/issue-form-to-job.js < issue_body.txt)
+          PATH_OUT=$(python3 scripts/issue_form_to_job.py < issue_body.txt)
           PATH_OUT=$(echo "$PATH_OUT" | tail -1)
           if [ -z "$PATH_OUT" ] || [ ! -f "$PATH_OUT" ]; then
             echo "Form parser did not produce a job file"
@@ -187,22 +182,13 @@ jobs:
           echo "path=$PATH_OUT" >> "$GITHUB_OUTPUT"
           echo "Created $PATH_OUT"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
       - name: Check for duplicate job
         id: duplicate_check
         run: |
-          RESULT=$(node scripts/check-duplicate.js "${{ steps.create.outputs.path }}" || echo '{"isDuplicate":true}')
+          RESULT=$(python3 scripts/check_duplicate.py "${{ steps.create.outputs.path }}" || echo '{"isDuplicate":true}')
           echo "result=$RESULT" >> "$GITHUB_OUTPUT"
-          IS_DUP=$(echo "$RESULT" | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).isDuplicate)")
-          if [ "$IS_DUP" = "true" ]; then
+          IS_DUP=$(python3 -c "import json,sys; print(json.loads('$RESULT').get('isDuplicate', False))")
+          if [ "$IS_DUP" = "True" ]; then
             echo "Duplicate job detected"
             exit 1
           fi
@@ -212,10 +198,10 @@ jobs:
         if: steps.duplicate_check.outcome == 'failure'
         run: |
           RESULT='${{ steps.duplicate_check.outputs.result }}'
-          TITLE=$(echo "$RESULT" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.title || 'Unknown')")
-          ORG=$(echo "$RESULT" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.organization || 'Unknown')")
-          EXISTING=$(echo "$RESULT" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf-8')); console.log(d.existingFile || 'unknown')")
-          
+          TITLE=$(python3 -c "import json,sys; d=json.loads('$RESULT'); print(d.get('title') or 'Unknown')")
+          ORG=$(python3 -c "import json,sys; d=json.loads('$RESULT'); print(d.get('organization') or 'Unknown')")
+          EXISTING=$(python3 -c "import json,sys; d=json.loads('$RESULT'); print(d.get('existingFile') or 'unknown')")
+
           gh issue comment ${{ github.event.issue.number }} --body "This job posting appears to be a duplicate of an existing listing.
 
           **Duplicate detected:**
@@ -231,7 +217,7 @@ jobs:
 
       - name: Build jobs and seekers JSON
         if: steps.duplicate_check.outcome == 'success'
-        run: npm run build:jobs
+        run: python3 scripts/build_jobs.py
 
       - name: Commit and push job file
         if: steps.duplicate_check.outcome == 'success'
@@ -260,16 +246,24 @@ jobs:
         with:
           ref: main
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements-scrape.txt
+
       - name: Write issue body to file
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          node -e "require('fs').writeFileSync('issue_body.txt', process.env.ISSUE_BODY || '')"
+          python3 -c "import os; open('issue_body.txt', 'w').write(os.environ.get('ISSUE_BODY', ''))"
 
       - name: Create seeker file from form
         id: create
         run: |
-          PATH_OUT=$(node scripts/issue-form-to-seeker.js < issue_body.txt)
+          PATH_OUT=$(python3 scripts/issue_form_to_seeker.py < issue_body.txt)
           PATH_OUT=$(echo "$PATH_OUT" | tail -1)
           if [ -z "$PATH_OUT" ] || [ ! -f "$PATH_OUT" ]; then
             echo "Form parser did not produce a seeker file"
@@ -278,13 +272,8 @@ jobs:
           echo "path=$PATH_OUT" >> "$GITHUB_OUTPUT"
           echo "Created $PATH_OUT"
 
-      - name: Regenerate data JSON
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
       - name: Build jobs and seekers JSON
-        run: npm ci && npm run build:jobs
+        run: python3 scripts/build_jobs.py
 
       - name: Commit and push seeker file
         run: |

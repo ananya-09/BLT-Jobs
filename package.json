@@ -2,11 +2,8 @@
   "name": "blt-jobs",
   "private": true,
   "scripts": {
-    "build:jobs": "node scripts/build-jobs.js",
-    "validate:jobs": "node scripts/validate-jobs.js",
-    "list:jobs": "node scripts/list-jobs-status.js"
-  },
-  "dependencies": {
-    "gray-matter": "^4.0.3"
+    "build:jobs": "python3 scripts/build_jobs.py",
+    "validate:jobs": "python3 scripts/validate_jobs.py",
+    "list:jobs": "python3 scripts/list_jobs_status.py"
   }
 }

@@ -23,72 +23,56 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '18'
+          python-version: "3.11"
 
       - name: Install dependencies
-        run: npm ci
+        run: pip install -r scripts/requirements-scrape.txt
 
       - name: Update view counts
         id: update_counts
         run: |
-          node << 'EOF'
-          const fs = require('fs');
-          const path = require('path');
-          const matter = require('gray-matter');
-          
-          // Get analytics data from workflow input or use empty object
-          const analyticsData = process.env.ANALYTICS_DATA 
-            ? JSON.parse(process.env.ANALYTICS_DATA) 
-            : {};
-          
-          console.log('Analytics data:', analyticsData);
-          
-          const jobsDir = path.join(process.cwd(), 'jobs');
-          const files = fs.readdirSync(jobsDir)
-            .filter(f => f.endsWith('.md') && f !== 'README.md');
-          
-          let updatedCount = 0;
-          
-          for (const file of files) {
-            const filePath = path.join(jobsDir, file);
-            const content = fs.readFileSync(filePath, 'utf8');
-            const { data: frontmatter, content: body } = matter(content);
-            
-            const jobId = path.basename(file, '.md');
-            
-            // Update view count if we have analytics data for this job
-            if (analyticsData[jobId]) {
-              const newCount = analyticsData[jobId].count || 0;
-              const currentCount = parseInt(frontmatter.views_count) || 0;
-              
-              // Only update if the new count is higher
-              if (newCount > currentCount) {
-                frontmatter.views_count = newCount.toString();
-                
-                // Reconstruct the file
-                const newContent = matter.stringify(body, frontmatter);
-                fs.writeFileSync(filePath, newContent);
-                
-                console.log(`Updated ${jobId}: ${currentCount} -> ${newCount} views`);
-                updatedCount++;
-              }
-            }
-          }
-          
-          console.log(`Updated ${updatedCount} job(s)`);
-          
-          // Set output for commit message
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `updated_count=${updatedCount}\n`);
+          python3 << 'EOF'
+          import json
+          import os
+          from pathlib import Path
+          import frontmatter
+
+          analytics_data = json.loads(os.environ.get("ANALYTICS_DATA", "{}"))
+          print("Analytics data:", analytics_data)
+
+          jobs_dir = Path.cwd() / "jobs"
+          files = [f for f in jobs_dir.iterdir() if f.suffix == ".md" and f.name != "README.md"]
+
+          updated_count = 0
+
+          for file_path in files:
+              post = frontmatter.load(str(file_path))
+              job_id = file_path.stem
+
+              if job_id in analytics_data:
+                  new_count = analytics_data[job_id].get("count", 0)
+                  current_count = int(post.metadata.get("views_count", 0) or 0)
+
+                  if new_count > current_count:
+                      post.metadata["views_count"] = str(new_count)
+                      file_path.write_text(frontmatter.dumps(post), encoding="utf-8")
+                      print(f"Updated {job_id}: {current_count} -> {new_count} views")
+                      updated_count += 1
+
+          print(f"Updated {updated_count} job(s)")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"updated_count={updated_count}\n")
           EOF
         env:
           ANALYTICS_DATA: ${{ github.event.inputs.analytics_data || '{}' }}
 
       - name: Rebuild jobs.json
         if: steps.update_counts.outputs.updated_count > 0
-        run: npm run build:jobs
+        run: python3 scripts/build_jobs.py
 
       - name: Commit and push changes
         if: steps.update_counts.outputs.updated_count > 0

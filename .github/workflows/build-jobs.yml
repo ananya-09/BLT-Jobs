@@ -8,18 +8,18 @@ on:
     paths:
       - "jobs/**"
       - "seekers/**"
-      - "scripts/build-jobs.js"
-      - "package.json"
-      - "package-lock.json"
+      - "scripts/build_jobs.py"
+      - "scripts/extract_salary.py"
+      - "scripts/requirements-scrape.txt"
   workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
       - "jobs/**"
       - "seekers/**"
-      - "scripts/build-jobs.js"
-      - "package.json"
-      - "package-lock.json"
+      - "scripts/build_jobs.py"
+      - "scripts/extract_salary.py"
+      - "scripts/requirements-scrape.txt"
 
 permissions:
   contents: write
@@ -30,20 +30,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: "20"
-          cache: "npm"
+          python-version: "3.11"
 
       - name: Install dependencies
-        run: npm ci
+        run: pip install -r scripts/requirements-scrape.txt
 
       - name: Build jobs JSON
-        run: npm run build:jobs
+        run: python3 scripts/build_jobs.py
 
       - name: Validate jobs
-        run: npm run validate:jobs
+        run: python3 scripts/validate_jobs.py
 
       - name: Commit updated data/jobs.json (main only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'

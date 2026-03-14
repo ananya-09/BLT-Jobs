@@ -16,3 +16,7 @@ comment.txt
 
 # Node dependencies
 node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]

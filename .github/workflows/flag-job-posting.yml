@@ -21,24 +21,33 @@ jobs:
         with:
           ref: main
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements-scrape.txt
+
       - name: Extract job ID from issue body
         id: parse
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          JOB_ID=$(node -e "
-            const body = process.env.ISSUE_BODY || '';
-            const match = body.match(/### Job ID\s*\n+([^\n]+)/);
-            if (match && match[1].trim()) {
-              // Sanitize: only allow alphanumeric characters, hyphens, and underscores
-              const id = match[1].trim().replace(/[^a-zA-Z0-9\-_]/g, '');
-              if (!id) { console.error('Empty job ID after sanitization'); process.exit(1); }
-              console.log(id);
-            } else {
-              console.error('No Job ID found in issue body');
-              process.exit(1);
-            }
-          ")
+          JOB_ID=$(python3 -c "
+import os, re, sys
+body = os.environ.get('ISSUE_BODY', '')
+m = re.search(r'### Job ID\s*\n+([^\n]+)', body)
+if m and m.group(1).strip():
+    job_id = re.sub(r'[^a-zA-Z0-9\-_]', '', m.group(1).strip())
+    if not job_id:
+        print('Empty job ID after sanitization', file=sys.stderr)
+        sys.exit(1)
+    print(job_id)
+else:
+    print('No Job ID found in issue body', file=sys.stderr)
+    sys.exit(1)
+")
           echo "job_id=$JOB_ID" >> "$GITHUB_OUTPUT"
           echo "Found job ID: $JOB_ID"
 
@@ -61,13 +70,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node
-        if: steps.check.outputs.exists == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
       - name: Create branch, remove job file, and open PR
         if: steps.check.outputs.exists == 'true'
         env:
@@ -82,8 +84,7 @@ jobs:
           git rm "${{ steps.check.outputs.job_file }}"
 
           # Rebuild data/jobs.json without the removed file
-          npm ci
-          npm run build:jobs
+          python3 scripts/build_jobs.py
           git add data/jobs.json data/seekers.json
 
           git commit -m "chore: remove flagged job ${{ steps.parse.outputs.job_id }} (issue #${{ github.event.issue.number }})"
