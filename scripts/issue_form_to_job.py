@@ -117,11 +117,13 @@ def main():
     JOBS_DIR.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines), encoding="utf-8")
 
-    # Print relative path from cwd
-    try:
-        print(str(out_path.relative_to(Path.cwd())))
-    except ValueError:
-        print(str(out_path))
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as f:
+            try:
+                f.write(f"path={out_path.relative_to(Path.cwd())}\n")
+            except ValueError:
+                f.write(f"path={out_path}\n")
 
 
 if __name__ == "__main__":

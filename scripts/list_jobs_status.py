@@ -20,8 +20,6 @@ def main():
     needs_review = sum(1 for j in data["jobs"] if j.get("needs_manual_review"))
     validated = data["count"] - needs_review
 
-    print(f"Total: {data['count']} | Validated: {validated} | Needs review: {needs_review}")
-
 
 if __name__ == "__main__":
     main()

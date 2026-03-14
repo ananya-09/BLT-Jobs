@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 """
 Check whether a new job file is a duplicate of an existing job.
-Outputs JSON result and exits with code 1 if duplicate, 0 otherwise.
+Writes JSON result to $GITHUB_OUTPUT and exits with code 1 if duplicate, 0 otherwise.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 
 import frontmatter
 
 JOBS_DIR = Path(__file__).resolve().parent.parent / "jobs"
+
+
+def _write_output(key, value):
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as f:
+            f.write(f"{key}={value}\n")
 
 
 def normalize_fingerprint(title, org, location):
@@ -24,6 +32,7 @@ def normalize_fingerprint(title, org, location):
 def check_duplicate(new_job_path):
     new_path = Path(new_job_path)
     if not new_path.exists():
+        _write_output("result", json.dumps({"isDuplicate": False, "error": "file not found"}))
         sys.exit(1)
 
     new_post = frontmatter.load(str(new_path))
@@ -48,7 +57,7 @@ def check_duplicate(new_job_path):
             fm.get("location"),
         )
         if new_fingerprint == existing_fingerprint:
-            print(json.dumps({
+            _write_output("result", json.dumps({
                 "isDuplicate": True,
                 "existingFile": file_path.name,
                 "title": fm.get("title") or "Untitled",
@@ -57,7 +66,7 @@ def check_duplicate(new_job_path):
             }))
             sys.exit(1)
 
-    print(json.dumps({"isDuplicate": False}))
+    _write_output("result", json.dumps({"isDuplicate": False}))
     sys.exit(0)
 
 

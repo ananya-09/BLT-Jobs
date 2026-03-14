@@ -65,26 +65,11 @@ print('Found URL: ' + url)
         id: scrape
         env:
           ISSUE_USER: ${{ github.event.issue.user.login }}
-        run: |
-          OUTPUT=$(python3 scripts/scrape-job-url.py "${{ steps.url.outputs.url }}")
-          OUTPUT=$(echo "$OUTPUT" | tail -1)
-          if [ -z "$OUTPUT" ] || [ ! -f "$OUTPUT" ]; then
-            echo "Scraper did not produce a job file"
-            exit 1
-          fi
-          echo "path=$OUTPUT" >> "$GITHUB_OUTPUT"
-          echo "Created $OUTPUT"
+        run: python3 scripts/scrape-job-url.py "${{ steps.url.outputs.url }}"
 
       - name: Check for duplicate job
         id: duplicate_check
-        run: |
-          RESULT=$(python3 scripts/check_duplicate.py "${{ steps.scrape.outputs.path }}" || echo '{"isDuplicate":true}')
-          echo "result=$RESULT" >> "$GITHUB_OUTPUT"
-          IS_DUP=$(python3 -c "import json,sys; print(json.loads('$RESULT').get('isDuplicate', False))")
-          if [ "$IS_DUP" = "True" ]; then
-            echo "Duplicate job detected"
-            exit 1
-          fi
+        run: python3 scripts/check_duplicate.py "${{ steps.scrape.outputs.path }}"
         continue-on-error: true
 
       - name: Comment on duplicate and close
@@ -175,26 +160,11 @@ print('true' if (val is True or str(val).lower() == 'true') else 'false')
         id: create
         env:
           ISSUE_USER: ${{ github.event.issue.user.login }}
-        run: |
-          PATH_OUT=$(python3 scripts/issue_form_to_job.py < issue_body.txt)
-          PATH_OUT=$(echo "$PATH_OUT" | tail -1)
-          if [ -z "$PATH_OUT" ] || [ ! -f "$PATH_OUT" ]; then
-            echo "Form parser did not produce a job file"
-            exit 1
-          fi
-          echo "path=$PATH_OUT" >> "$GITHUB_OUTPUT"
-          echo "Created $PATH_OUT"
+        run: python3 scripts/issue_form_to_job.py < issue_body.txt
 
       - name: Check for duplicate job
         id: duplicate_check
-        run: |
-          RESULT=$(python3 scripts/check_duplicate.py "${{ steps.create.outputs.path }}" || echo '{"isDuplicate":true}')
-          echo "result=$RESULT" >> "$GITHUB_OUTPUT"
-          IS_DUP=$(python3 -c "import json,sys; print(json.loads('$RESULT').get('isDuplicate', False))")
-          if [ "$IS_DUP" = "True" ]; then
-            echo "Duplicate job detected"
-            exit 1
-          fi
+        run: python3 scripts/check_duplicate.py "${{ steps.create.outputs.path }}"
         continue-on-error: true
 
       - name: Comment on duplicate and close
@@ -265,15 +235,7 @@ print('true' if (val is True or str(val).lower() == 'true') else 'false')
 
       - name: Create seeker file from form
         id: create
-        run: |
-          PATH_OUT=$(python3 scripts/issue_form_to_seeker.py < issue_body.txt)
-          PATH_OUT=$(echo "$PATH_OUT" | tail -1)
-          if [ -z "$PATH_OUT" ] || [ ! -f "$PATH_OUT" ]; then
-            echo "Form parser did not produce a seeker file"
-            exit 1
-          fi
-          echo "path=$PATH_OUT" >> "$GITHUB_OUTPUT"
-          echo "Created $PATH_OUT"
+        run: python3 scripts/issue_form_to_seeker.py < issue_body.txt
 
       - name: Build jobs and seekers JSON
         run: python3 scripts/build_jobs.py

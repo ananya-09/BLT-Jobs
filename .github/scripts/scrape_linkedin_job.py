@@ -5,6 +5,7 @@ Scrapes job details from LinkedIn job posting URLs
 """
 
 import sys
+import os
 import re
 import json
 import requests
@@ -153,8 +154,11 @@ def main():
 
     if job_data:
         job_data['original_url'] = url
-        # Output as JSON
-        print(json.dumps(job_data, indent=2))
+        # Write JSON to $GITHUB_OUTPUT if available
+        github_output = os.environ.get("GITHUB_OUTPUT")
+        if github_output:
+            with open(github_output, "a") as f:
+                f.write(f"result={json.dumps(job_data)}\n")
     else:
         sys.exit(1)
 

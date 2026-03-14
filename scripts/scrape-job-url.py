@@ -461,7 +461,10 @@ def main():
     lines += ["---", "", body]
 
     out_path.write_text("\n".join(lines), encoding="utf-8")
-    print(str(out_path))
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as f:
+            f.write(f"path={out_path}\n")
 
 
 if __name__ == "__main__":

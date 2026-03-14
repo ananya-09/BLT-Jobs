@@ -77,6 +77,4 @@ def extract_salary(text):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit(1)
-    result = extract_salary(sys.argv[1])
-    if result:
-        print(result)
+    extract_salary(sys.argv[1])
