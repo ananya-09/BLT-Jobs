@@ -76,7 +76,7 @@ def extract_salary(text):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print('Usage: extract_salary.py "<job description text>"', file=sys.stderr)
         sys.exit(1)
     result = extract_salary(sys.argv[1])
-    print(result or "No salary found")
+    if result:
+        print(result)

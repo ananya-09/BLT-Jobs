@@ -4,7 +4,6 @@ Build data/jobs.json from jobs/*.md and data/seekers.json from seekers/*.md.
 """
 
 import json
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -138,12 +137,7 @@ def build_jobs():
     )
     jobs = [md_to_job(f) for f in files]
 
-    duplicates = detect_duplicates(jobs)
-    if duplicates:
-        print("\nDuplicate jobs detected:", file=sys.stderr)
-        for dup in duplicates:
-            print(f"  {dup['duplicate']} is a duplicate of {dup['original']}", file=sys.stderr)
-        print("  Consider removing duplicate job files.\n", file=sys.stderr)
+    detect_duplicates(jobs)
 
     now = datetime.now(timezone.utc)
     active_jobs = []
@@ -157,17 +151,6 @@ def build_jobs():
                 active_jobs.append(job)
         except (ValueError, AttributeError):
             active_jobs.append(job)
-
-    expired_count = len(jobs) - len(active_jobs)
-    if expired_count > 0:
-        print(f"Filtered out {expired_count} expired job(s)")
-
-    needs_review = [j for j in jobs if j["needs_manual_review"]]
-    if needs_review:
-        print("\n⚠️  WARNING: The following jobs need manual review (possible scrape failures):", file=sys.stderr)
-        for j in needs_review:
-            print(f"   - {j['id']}: {j['title']} ({j['organization_name']})", file=sys.stderr)
-        print(f"\nTotal jobs needing review: {len(needs_review)}\n", file=sys.stderr)
 
     out = {
         "jobs": active_jobs,

@@ -114,13 +114,16 @@ print('Found URL: ' + url)
 
       - name: Check if job needs manual review
         id: validate
+        env:
+          JOB_FILE: ${{ steps.scrape.outputs.path }}
         run: |
-          JOB_FILE=$(basename "${{ steps.scrape.outputs.path }}" .md)
-          if python3 scripts/validate_jobs.py 2>&1 | grep -q "$JOB_FILE"; then
-            echo "needs_review=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "needs_review=false" >> "$GITHUB_OUTPUT"
-          fi
+          NEEDS_REVIEW=$(python3 -c "
+import frontmatter, os
+post = frontmatter.load(os.environ['JOB_FILE'])
+val = post.metadata.get('needs_manual_review', False)
+print('true' if (val is True or str(val).lower() == 'true') else 'false')
+")
+          echo "needs_review=$NEEDS_REVIEW" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
       - name: Commit and push job file

@@ -24,7 +24,6 @@ def normalize_fingerprint(title, org, location):
 def check_duplicate(new_job_path):
     new_path = Path(new_job_path)
     if not new_path.exists():
-        print(f"Error: Job file not found: {new_job_path}", file=sys.stderr)
         sys.exit(1)
 
     new_post = frontmatter.load(str(new_path))
@@ -64,6 +63,5 @@ def check_duplicate(new_job_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: check_duplicate.py <path-to-job-file>", file=sys.stderr)
         sys.exit(1)
     check_duplicate(sys.argv[1])

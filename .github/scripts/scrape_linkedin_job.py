@@ -93,11 +93,9 @@ def scrape_linkedin_job(url):
         
         return None
         
-    except requests.RequestException as e:
-        print(f"Error fetching URL: {e}", file=sys.stderr)
+    except requests.RequestException:
         return None
-    except Exception as e:
-        print(f"Error parsing job data: {e}", file=sys.stderr)
+    except Exception:
         return None
 
 
@@ -143,26 +141,21 @@ def format_job_data_as_issue_body(job_data):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: scrape_linkedin_job.py <linkedin_job_url>", file=sys.stderr)
         sys.exit(1)
-    
+
     url = sys.argv[1]
-    
+
     # Validate URL
     if 'linkedin.com/jobs' not in url:
-        print("Error: Not a valid LinkedIn job URL", file=sys.stderr)
         sys.exit(1)
-    
-    print(f"Scraping LinkedIn job: {url}", file=sys.stderr)
-    
+
     job_data = scrape_linkedin_job(url)
-    
+
     if job_data:
         job_data['original_url'] = url
         # Output as JSON
         print(json.dumps(job_data, indent=2))
     else:
-        print("Error: Failed to scrape job data", file=sys.stderr)
         sys.exit(1)
 
 

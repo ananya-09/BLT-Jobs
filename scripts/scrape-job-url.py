@@ -22,7 +22,6 @@ try:
     import requests
     from bs4 import BeautifulSoup
 except ImportError:
-    print("pip install requests beautifulsoup4", file=sys.stderr)
     sys.exit(1)
 
 JOBS_DIR = Path(__file__).resolve().parent.parent / "jobs"
@@ -145,8 +144,7 @@ def scrape_greenhouse(url: str):
         jr = requests.get(f"{api_base}/{company}/jobs/{job_id}", headers=HEADERS, timeout=15)
         jr.raise_for_status()
         data = jr.json()
-    except Exception as e:
-        print(f"Greenhouse API error: {e}", file=sys.stderr)
+    except Exception:
         return None
 
     title = (data.get("title") or "Job Listing").strip()
@@ -155,7 +153,6 @@ def scrape_greenhouse(url: str):
     # Greenhouse returns HTML-entity-escaped HTML — unescape before parsing
     description = html_to_text(unescape(data.get("content") or ""))
 
-    print(f"[Greenhouse API] {org_name} — {title}", file=sys.stderr)
     return {
         "title": title,
         "organization_name": org_name,
@@ -189,8 +186,7 @@ def scrape_lever(url: str):
         )
         r.raise_for_status()
         data = r.json()
-    except Exception as e:
-        print(f"Lever API error: {e}", file=sys.stderr)
+    except Exception:
         return None
 
     title = (data.get("text") or "Job Listing").strip()
@@ -207,7 +203,6 @@ def scrape_lever(url: str):
     html_parts.append(data.get("additional") or "")
     description = html_to_text("\n".join(html_parts))
 
-    print(f"[Lever API] {org_name} — {title}", file=sys.stderr)
     return {
         "title": title,
         "organization_name": org_name,
@@ -295,8 +290,7 @@ def scrape_static(url: str):
         r = requests.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
-    except Exception as e:
-        print(f"Static fetch error: {e}", file=sys.stderr)
+    except Exception:
         return None
 
     # --- JSON-LD (best quality) ---
@@ -304,7 +298,6 @@ def scrape_static(url: str):
     if ld:
         fm, description = parse_json_ld(ld, url)
         if description or fm["title"] != "Job Listing":
-            print(f"[JSON-LD] {fm['organization_name']} — {fm['title']}", file=sys.stderr)
             return fm, description
 
     # --- Heuristic HTML extraction ---
@@ -327,7 +320,6 @@ def scrape_static(url: str):
     org_name = (og_site["content"].strip() if og_site and og_site.get("content") else "") or org_from_host(url)
 
     description = soup_main_text(soup)
-    print(f"[Static HTML] {org_name} — {title}", file=sys.stderr)
     return {
         "title": title,
         "organization_name": org_name,
@@ -344,7 +336,6 @@ def scrape_static(url: str):
 
 def scrape_jina(url: str) -> tuple[dict, str]:
     """Use r.jina.ai to render and extract any page, including JS-heavy ones."""
-    print("Falling back to Jina Reader API…", file=sys.stderr)
     try:
         jina_url = f"https://r.jina.ai/{url}"
         r = requests.get(
@@ -354,8 +345,7 @@ def scrape_jina(url: str) -> tuple[dict, str]:
         )
         r.raise_for_status()
         content = r.text.strip()
-    except Exception as e:
-        print(f"Jina Reader error: {e}", file=sys.stderr)
+    except Exception:
         return {
             "title": "Job Listing",
             "organization_name": org_from_host(url),
@@ -379,7 +369,6 @@ def scrape_jina(url: str) -> tuple[dict, str]:
     description = "\n".join(lines[body_start:]) if body_start else "\n".join(lines[1:])
     org_name = org_from_host(url)
 
-    print(f"[Jina Reader] {org_name} — {title}", file=sys.stderr)
     return {
         "title": title,
         "organization_name": org_name,
@@ -403,19 +392,15 @@ def scrape_url(url: str) -> tuple[dict, str]:
         result = scrape_jina(url)
 
     if result is None:
-        print("Could not extract job data from URL (all strategies failed).", file=sys.stderr)
         sys.exit(1)
 
     fm_partial, description = result
-    
+
     # Detect if scrape failed
     needs_review = fm_partial.get("needs_manual_review", False)
     if not needs_review:
         needs_review = detect_failed_scrape(description, fm_partial.get("title", ""))
-    
-    if needs_review:
-        print("⚠️  WARNING: Scrape may have failed - flagged for manual review", file=sys.stderr)
-    
+
     created = datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(datetime, "UTC") else datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     fm = {
         "title":                   fm_partial.get("title", "Job Listing"),
@@ -443,7 +428,6 @@ def scrape_url(url: str) -> tuple[dict, str]:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: scrape-job-url.py <job_url>", file=sys.stderr)
         sys.exit(1)
 
     url = sys.argv[1].strip()
